@@ -25,6 +25,7 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
 
   const {
     transcript,
+    listening,
     resetTranscript,
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
@@ -52,6 +53,11 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
     checkMobile();
   }, []);
 
+  // Sync recording state with actual listening state
+  useEffect(() => {
+    setIsRecording(listening);
+  }, [listening]);
+
   useEffect(() => {
     if (transcript) {
       let cleanedTranscript = transcript
@@ -70,35 +76,6 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
     }
   }, [query]);
-
-  // Listen for speech recognition errors
-  useEffect(() => {
-    const handleError = (event: any) => {
-      console.error('Speech recognition error:', event);
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        setMicPermissionError(true);
-        setIsRecording(false);
-      }
-    };
-
-    if (browserSupportsSpeechRecognition) {
-      // @ts-ignore - SpeechRecognition event handlers
-      const recognition = SpeechRecognition.getRecognition();
-      if (recognition) {
-        recognition.onerror = handleError;
-      }
-    }
-
-    return () => {
-      if (browserSupportsSpeechRecognition) {
-        // @ts-ignore
-        const recognition = SpeechRecognition.getRecognition();
-        if (recognition) {
-          recognition.onerror = null;
-        }
-      }
-    };
-  }, [browserSupportsSpeechRecognition]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,22 +109,31 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
     }
   };
 
-  const startListening = () => {
-    if (browserSupportsSpeechRecognition) {
-      setMicPermissionError(false);
-      resetTranscript();
-      setQuery('');
+  const startListening = async () => {
+    if (!browserSupportsSpeechRecognition) {
+      return;
+    }
+
+    setMicPermissionError(false);
+    resetTranscript();
+    setQuery('');
+
+    try {
+      // Start speech recognition - browser will handle permission
+      await SpeechRecognition.startListening({ 
+        continuous: true,
+        language: 'en-US',
+        interimResults: true
+      });
+      setIsRecording(true);
+    } catch (err: any) {
+      console.error("Speech recognition error:", err);
+      setMicPermissionError(true);
+      setIsRecording(false);
       
-      try {
-        SpeechRecognition.startListening({ 
-          continuous: true,
-          language: 'en-US',
-          interimResults: true
-        });
-        setIsRecording(true);
-      } catch (err) {
-        console.error("Speech recognition error:", err);
-        setMicPermissionError(true);
+      // Show helpful error message
+      if (err.message && err.message.includes('not-allowed')) {
+        alert("Microphone permission denied.\n\nTo enable:\n1. Tap the lock/info icon in the address bar\n2. Tap 'Permissions' or 'Site settings'\n3. Enable 'Microphone'\n4. Refresh and try again");
       }
     }
   };
@@ -300,7 +286,7 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
       
       {micPermissionError && (
         <p style={{ textAlign: 'center', marginTop: '0.5rem', color: 'rgba(239, 68, 68, 0.9)', fontSize: '0.9rem' }}>
-          ⚠️ Microphone permission denied. Please check your browser settings.
+          ⚠️ Microphone permission denied. Check site permissions in browser settings.
         </p>
       )}
     </div>
