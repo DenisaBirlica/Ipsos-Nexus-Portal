@@ -71,6 +71,35 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
     }
   }, [query]);
 
+  // Listen for speech recognition errors
+  useEffect(() => {
+    const handleError = (event: any) => {
+      console.error('Speech recognition error:', event);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setMicPermissionError(true);
+        setIsRecording(false);
+      }
+    };
+
+    if (browserSupportsSpeechRecognition) {
+      // @ts-ignore - SpeechRecognition event handlers
+      const recognition = SpeechRecognition.getRecognition();
+      if (recognition) {
+        recognition.onerror = handleError;
+      }
+    }
+
+    return () => {
+      if (browserSupportsSpeechRecognition) {
+        // @ts-ignore
+        const recognition = SpeechRecognition.getRecognition();
+        if (recognition) {
+          recognition.onerror = null;
+        }
+      }
+    };
+  }, [browserSupportsSpeechRecognition]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -110,22 +139,12 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
       setQuery('');
       
       try {
-        // For mobile: use continuous true but with auto-stop
         SpeechRecognition.startListening({ 
           continuous: true,
           language: 'en-US',
           interimResults: true
         });
         setIsRecording(true);
-        
-        // Auto-stop after 10 seconds on mobile to prevent issues
-        if (isMobile) {
-          setTimeout(() => {
-            if (isRecording) {
-              stopListening();
-            }
-          }, 10000);
-        }
       } catch (err) {
         console.error("Speech recognition error:", err);
         setMicPermissionError(true);
