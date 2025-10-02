@@ -103,16 +103,13 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
     }
   };
 
-  const startListening = async () => {
+  const startListening = () => {
     if (browserSupportsSpeechRecognition) {
+      setMicPermissionError(false);
+      resetTranscript();
+      setQuery('');
+      
       try {
-        // Request microphone permission explicitly (required for mobile)
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-        setMicPermissionError(false);
-        resetTranscript();
-        setQuery('');
-        
         // For mobile: use continuous true but with auto-stop
         SpeechRecognition.startListening({ 
           continuous: true,
@@ -124,25 +121,14 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
         // Auto-stop after 10 seconds on mobile to prevent issues
         if (isMobile) {
           setTimeout(() => {
-            stopListening();
+            if (isRecording) {
+              stopListening();
+            }
           }, 10000);
         }
       } catch (err) {
-        console.error("Microphone access denied:", err);
+        console.error("Speech recognition error:", err);
         setMicPermissionError(true);
-        
-        // Show user-friendly error message
-        if (err instanceof Error) {
-          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-            alert("Microphone access denied. Please enable microphone permissions in your browser settings.");
-          } else if (err.name === 'NotFoundError') {
-            alert("No microphone found. Please connect a microphone and try again.");
-          } else if (err.name === 'NotSupportedError') {
-            alert("Your browser doesn't support microphone access. Please try using HTTPS or a modern browser.");
-          } else {
-            alert("Unable to access microphone. Please check your browser settings.");
-          }
-        }
       }
     }
   };
