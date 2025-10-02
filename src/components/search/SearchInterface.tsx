@@ -18,7 +18,6 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const [micPermissionError, setMicPermissionError] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { performSearch, isLoading } = useSearch();
@@ -38,17 +37,11 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
     { id: 'sharepoint', name: 'SharePoint', icon: '📄', description: 'SharePoint documents' },
   ];
 
-  // Check if mobile and iOS on mount
+  // Check if mobile on mount
   useEffect(() => {
     const checkMobile = () => {
       const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      // Check if it's Chrome on iOS (CriOS = Chrome iOS)
-      const isChromeIOS = /CriOS/i.test(navigator.userAgent);
-      
       setIsMobile(mobile);
-      // Only disable for iOS if it's NOT Chrome
-      setIsIOS(ios && !isChromeIOS);
     };
     checkMobile();
   }, []);
@@ -165,7 +158,7 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
   };
 
   // Check if voice search is available
-  const isVoiceSearchAvailable = browserSupportsSpeechRecognition && !isIOS;
+  const isVoiceSearchAvailable = browserSupportsSpeechRecognition;
 
   return (
     <div className="search-interface">
@@ -276,11 +269,7 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
       {/* Help text for voice search */}
       {!isVoiceSearchAvailable && (
         <p style={{ textAlign: 'center', marginTop: '1rem', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>
-          {isIOS 
-            ? '🎤 Voice search is not supported in Safari on iOS. Please use Chrome or text input.'
-            : !browserSupportsSpeechRecognition
-              ? '🎤 Voice search not supported. Try Chrome browser.'
-              : '🎤 Voice search available'}
+          🎤 Voice search not supported in this browser. Try Chrome, Edge, or Opera.
         </p>
       )}
       
