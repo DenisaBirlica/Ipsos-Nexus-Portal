@@ -43,12 +43,9 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
     const checkMobile = () => {
       const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      // Check if it's Chrome on iOS (CriOS = Chrome iOS)
-      const isChromeIOS = /CriOS/i.test(navigator.userAgent);
-      
+
       setIsMobile(mobile);
-      // Only disable for iOS if it's NOT Chrome
-      setIsIOS(ios && !isChromeIOS);
+      setIsIOS(ios);
     };
     checkMobile();
   }, []);
@@ -276,8 +273,8 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearch }) => {
       {/* Help text for voice search */}
       {!isVoiceSearchAvailable && (
         <p style={{ textAlign: 'center', marginTop: '1rem', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>
-          {isIOS 
-            ? '🎤 Voice search is not supported in Safari on iOS. Please use Chrome or text input.'
+          {isIOS
+            ? '🎤 Voice search is not supported on iOS browsers. Please use text input.'
             : !browserSupportsSpeechRecognition
               ? '🎤 Voice search not supported. Try Chrome browser.'
               : '🎤 Voice search available'}
